@@ -1,5 +1,10 @@
 ## Release Notes
 
+### 1.0.0 (2018-01-24)
+
+* Forked by Intent Technologies
+* Fix support of combination of body parameters and form-data parameters
+
 ### TBD
 
 * Remove `string` dependency _(PR #542)_
