@@ -30,16 +30,12 @@ var bp = require('body-parser');
 var cHelpers = require('../lib/helpers');
 var debug = require('debug')('swagger-tools:middleware:metadata');
 var mHelpers = require('./helpers');
-var multer = require('multer');
 var parseurl = require('parseurl');
 var pathToRegexp = require('path-to-regexp');
 
 // Upstream middlewares
 var bodyParserOptions = {
   extended: false
-};
-var multerOptions = {
-  storage: multer.memoryStorage()
 };
 var textBodyParserOptions = {
   type: '*/*'
@@ -75,16 +71,6 @@ var bodyParser = function (req, res, next) {
   } else {
     next();
   }
-};
-var realMultiPartParser = multer(multerOptions);
-var makeMultiPartParser = function (parser) {
-  return function (req, res, next) {
-    if (_.isUndefined(req.files)) {
-      parser(req, res, next);
-    } else {
-      next();
-    }
-  };
 };
 
 // Helper functions
@@ -137,7 +123,7 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
       case 'form':
       case 'formData':
         if (paramType.toLowerCase() === 'file' || (contentType && contentType.split(';')[0] === 'multipart/form-data')) {
-          // Do not add a parser, multipart will be handled after
+          // Ignore multipart parsing
           break;
         } else if (paramLocation !== 'body' || parsableBody) {
           parser = bodyParser;
@@ -159,35 +145,6 @@ var processOperationParameters = function (swaggerMetadata, pathKeys, pathMatch,
 
     return requestParsers;
   }, []);
-
-  // Multipart is handled by multer, which needs an array of {parameterName, maxCount}
-  var multiPartFields = _.reduce(parameters, function (fields, parameter) {
-    var paramLocation = version === '1.2' ? parameter.paramType : parameter.schema.in;
-    var paramType = mHelpers.getParameterType(version === '1.2' ? parameter : parameter.schema);
-    var paramName = version === '1.2' ? parameter.name : parameter.schema.name;
-
-    switch (paramLocation) {
-      case 'body':
-      case 'form':
-      case 'formData':
-        if (paramType.toLowerCase() === 'file') {
-          // Swagger spec does not allow array of files, so maxCount should be 1
-          fields.push({name: paramName, maxCount: 1});
-        }
-        break;
-    }
-
-    return fields;
-  }, []);
-  
-  var contentType = req.headers['content-type'];
-  if (multiPartFields.length) {
-    // If there are files, use multer#fields
-    parsers.push(makeMultiPartParser(realMultiPartParser.fields(multiPartFields)));
-  } else if (contentType && contentType.split(';')[0] === 'multipart/form-data') {
-    // If no files but multipart form, use empty multer#array for text fields
-    parsers.push(makeMultiPartParser(realMultiPartParser.array()));
-  }
 
   async.map(parsers, function (parser, callback) {
     parser(req, res, callback);
