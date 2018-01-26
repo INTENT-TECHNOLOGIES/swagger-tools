@@ -1,5 +1,8 @@
 ## Release Notes
 
+### 1.1.0 (2018-01-26)
+* Remove multipart request parsing with multer
+
 ### 1.0.0 (2018-01-24)
 
 * Forked by Intent Technologies
