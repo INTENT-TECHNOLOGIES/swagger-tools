@@ -115,7 +115,7 @@ exports = module.exports = function (options) {
     debug('%s %s', req.method, req.url);
     debug('  Will process: %s', _.isUndefined(operation) ? 'no' : 'yes');
 
-    if (operation) {
+    if (operation && ['2.0', '1.2'].includes(req.swagger.swaggerVersion)) {
       securityReqs = req.swagger.swaggerVersion === '1.2' ?
         // Global (path level), authorization support is not possible:
         //   Not possible due to https://github.com/swagger-api/swagger-spec/issues/159
